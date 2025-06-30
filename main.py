@@ -8,8 +8,11 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from math import ceil
 from datetime import datetime
+from dotenv import load_dotenv
 
-API_TOKEN = os.getenv("API_TOKEN")
+# Load environment variables
+load_dotenv()
+API_TOKEN = os.getenv("7560492080:AAH2PiGUy3wlO7xn4vd1_iSLW74ZdPc3dY4")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -61,16 +64,16 @@ class OrderState(StatesGroup):
     choosing_quantity = State()
     choosing_payment = State()
     sending_location = State()
+    sending_contact = State()
 
 user_cart = {}
 
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
     now = datetime.now().hour
-    if not (WORK_HOURS[0] <= now < WORK_HOURS[1]) and message.from_user.id not in ADMINS:
-        await message.answer("Kechirasiz, buyurtma faqat soat 8:00 dan 19:00 gacha qabul qilinadi.")
+    if message.from_user.id not in ADMINS and not (WORK_HOURS[0] <= now < WORK_HOURS[1]):
+        await message.answer("Kechirasiz, buyurtmalar faqat soat 8:00 dan 19:00 gacha qabul qilinadi.")
         return
-
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     for cat in products:
         kb.add(cat)
@@ -120,15 +123,27 @@ async def choose_payment(message: types.Message):
 @dp.message_handler(lambda msg: msg.text in ["Naqd", "Click/Payme"], state=OrderState.choosing_payment)
 async def get_location(message: types.Message, state: FSMContext):
     await state.update_data(payment_method=message.text)
-    kb = ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton("Lokatsiyani yuborish", request_location=True))
-    await message.answer("Iltimos, yetkazib berish manzilingizni yuboring:", reply_markup=kb)
+    kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    kb.add(
+        KeyboardButton("📍 Lokatsiyani yuborish", request_location=True),
+        KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True)
+    )
+    await message.answer("Iltimos, lokatsiyangiz va telefon raqamingizni yuboring:", reply_markup=kb)
     await OrderState.sending_location.set()
 
 @dp.message_handler(content_types=types.ContentType.LOCATION, state=OrderState.sending_location)
+async def get_contact(message: types.Message, state: FSMContext):
+    await state.update_data(location=message.location)
+    await message.answer("Endi telefon raqamingizni yuboring:")
+    await OrderState.sending_contact.set()
+
+@dp.message_handler(content_types=types.ContentType.CONTACT, state=OrderState.sending_contact)
 async def finish_order(message: types.Message, state: FSMContext):
     cart = user_cart.get(message.from_user.id, [])
     data = await state.get_data()
     payment = data['payment_method']
+    location = data['location']
+    phone = message.contact.phone_number
 
     total = sum(products[cat][prod] * qty for prod, qty in cart for cat in products if prod in products[cat])
 
@@ -137,15 +152,21 @@ async def finish_order(message: types.Message, state: FSMContext):
         return
 
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
-    full_text = (f"Yangi buyurtma!\n\n👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
-                 f"📦 Buyurtma:\n{order_text}\n💰 To‘lov: {payment}\n🧾 Umumiy: {total} so‘m")
+    full_text = (
+        f"🆕 Yangi buyurtma!\n\n"
+        f"👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
+        f"📞 Telefon: {phone}\n"
+        f"📦 Buyurtma:\n{order_text}\n"
+        f"💰 To‘lov: {payment}\n"
+        f"🧾 Umumiy: {total} so‘m"
+    )
 
     for admin in ADMINS:
         try:
             await bot.send_message(admin, full_text)
-            await bot.send_location(admin, message.location.latitude, message.location.longitude)
+            await bot.send_location(admin, location.latitude, location.longitude)
         except Exception as e:
-            logging.warning(f"Xabar yuborilmadi adminga {admin}: {e}")
+            logging.error(f"Adminga yuborishda xatolik: {e}")
 
     await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!")
     await state.finish()
