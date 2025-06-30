@@ -16,7 +16,7 @@ API_TOKEN = os.getenv("7560492080:AAGtjKbscdRG21D11Aq1plzIytGXgatWNtY")
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=API_TOKEN)
+bot = Bot(token="7560492080:AAGtjKbscdRG21D11Aq1plzIytGXgatWNtY")
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 ADMINS = [6057841081, 6668584870, 6590535774, 24847201]
