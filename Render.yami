@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: telegram-delivery-bot
-    env: python
-    buildCommand: ""
-    startCommand: python main.py
-    envVars:
-      - key: API_TOKEN
-        sync: false
