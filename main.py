@@ -1,3 +1,4 @@
+# main.py
 import logging
 import os
 from aiogram import Bot, Dispatcher, types
@@ -12,11 +13,11 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-API_TOKEN = os.getenv("7560492080:AAGtjKbscdRG21D11Aq1plzIytGXgatWNtY")
+API_TOKEN = os.getenv("API_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token="7560492080:AAGtjKbscdRG21D11Aq1plzIytGXgatWNtY")
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 ADMINS = [6057841081, 6668584870, 6590535774, 24847201]
@@ -125,8 +126,8 @@ async def get_location(message: types.Message, state: FSMContext):
     await state.update_data(payment_method=message.text)
     kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add(
-        KeyboardButton("📍 Lokatsiyani yuborish", request_location=True),
-        KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True)
+        KeyboardButton("\ud83d\udccd Lokatsiyani yuborish", request_location=True),
+        KeyboardButton("\ud83d\udcde Telefon raqamni yuborish", request_contact=True)
     )
     await message.answer("Iltimos, lokatsiyangiz va telefon raqamingizni yuboring:", reply_markup=kb)
     await OrderState.sending_location.set()
@@ -153,12 +154,12 @@ async def finish_order(message: types.Message, state: FSMContext):
 
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
     full_text = (
-        f"🆕 Yangi buyurtma!\n\n"
-        f"👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
-        f"📞 Telefon: {phone}\n"
-        f"📦 Buyurtma:\n{order_text}\n"
-        f"💰 To‘lov: {payment}\n"
-        f"🧾 Umumiy: {total} so‘m"
+        f"\ud83c\udd91 Yangi buyurtma!\n\n"
+        f"\ud83d\udc64 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
+        f"\ud83d\udcde Telefon: {phone}\n"
+        f"\ud83d\udce6 Buyurtma:\n{order_text}\n"
+        f"\ud83d\udcb0 To‘lov: {payment}\n"
+        f"\ud83e\uddfe Umumiy: {total} so‘m"
     )
 
     for admin in ADMINS:
