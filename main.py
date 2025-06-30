@@ -1,26 +1,26 @@
 import logging
+import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils import executor
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-from datetime import datetime
 from math import ceil
-import os
+from datetime import datetime
 
 API_TOKEN = os.getenv("API_TOKEN")
-ADMINS = list(map(int, os.getenv("ADMINS", "").split(',')))
-
-MIN_ORDER_AMOUNT = 50000
-BASE_DELIVERY_COST = 15000
-EXTRA_KM_COST = 2000
-WORK_HOURS = (8, 19)
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
+
+ADMINS = [6057841081, 6668584870, 6590535774, 24847201]
+MIN_ORDER_AMOUNT = 50000
+BASE_DELIVERY_COST = 15000
+EXTRA_KM_COST = 2000
+WORK_HOURS = (8, 19)
 
 products = {
     'Somsa': {
@@ -67,8 +67,8 @@ user_cart = {}
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
     now = datetime.now().hour
-    if not message.from_user.id in ADMINS and not (WORK_HOURS[0] <= now < WORK_HOURS[1]):
-        await message.answer("Bot ish vaqti: 08:00 - 19:00. Iltimos, shu vaqt ichida murojaat qiling.")
+    if not (WORK_HOURS[0] <= now < WORK_HOURS[1]) and message.from_user.id not in ADMINS:
+        await message.answer("Kechirasiz, buyurtma faqat soat 8:00 dan 19:00 gacha qabul qilinadi.")
         return
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -91,7 +91,6 @@ async def select_product(call: types.CallbackQuery, state: FSMContext):
     await state.update_data(selected_product=call.data)
     await call.message.answer(f"Nechta '{call.data}' istaysiz?")
     await OrderState.next()
-    await call.answer()
 
 @dp.message_handler(lambda msg: msg.text.isdigit(), state=OrderState.choosing_quantity)
 async def add_to_cart(message: types.Message, state: FSMContext):
@@ -137,23 +136,16 @@ async def finish_order(message: types.Message, state: FSMContext):
         await message.answer(f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. Sizning buyurtmangiz: {total} so‘m.")
         return
 
-    order_text = "
-".join([f"{p} x {q}" for p, q in cart])
-    full_text = (f"Yangi buyurtma!
-
-👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}
-"
-                 f"📦 Buyurtma:
-{order_text}
-💰 To‘lov: {payment}
-🧾 Umumiy: {total} so‘m")
+    order_text = "\n".join([f"{p} x {q}" for p, q in cart])
+    full_text = (f"Yangi buyurtma!\n\n👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
+                 f"📦 Buyurtma:\n{order_text}\n💰 To‘lov: {payment}\n🧾 Umumiy: {total} so‘m")
 
     for admin in ADMINS:
         try:
             await bot.send_message(admin, full_text)
             await bot.send_location(admin, message.location.latitude, message.location.longitude)
         except Exception as e:
-            logging.warning(f"Xatolik: {e}")
+            logging.warning(f"Xabar yuborilmadi adminga {admin}: {e}")
 
     await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!")
     await state.finish()
