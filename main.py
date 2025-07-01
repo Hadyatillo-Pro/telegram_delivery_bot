@@ -71,7 +71,7 @@ user_cart = {}
 
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
-    now = datetime.now().hour
+    now = (datetime.utcnow().hour + 5) % 24
     if message.from_user.id not in ADMINS and not (WORK_HOURS[0] <= now < WORK_HOURS[1]):
         await message.answer("Kechirasiz, buyurtmalar faqat soat 8:00 dan 19:00 gacha qabul qilinadi.")
         return
