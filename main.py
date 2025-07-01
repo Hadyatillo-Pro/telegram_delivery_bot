@@ -73,6 +73,7 @@ user_cart = {}
 async def cmd_start(message: types.Message):
    from datetime import datetime, timedelta
 now = (datetime.utcnow() + timedelta(hours=5)).hour
+
     if message.from_user.id not in ADMINS and not (WORK_HOURS[0] <= now < WORK_HOURS[1]):
         await message.answer("Kechirasiz, buyurtmalar faqat soat 8:00 dan 19:00 gacha qabul qilinadi.")
         return
