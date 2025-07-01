@@ -144,10 +144,19 @@ async def finish_order(message: types.Message, state: FSMContext):
     payment = data['payment_method']
     location = data['location']
     phone = message.contact.phone_number
+
     total = sum(products[cat][prod] * qty for prod, qty in cart for cat in products if prod in products[cat])
 
     if total < MIN_ORDER_AMOUNT:
-        await message.answer(f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. Sizning buyurtmangiz: {total} so‘m.")
+        kb = ReplyKeyboardMarkup(resize_keyboard=True)
+        kb.add("🔁 Yana qo‘shish", "🏠 Menyuga qaytish")
+        await message.answer(
+            f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m.\n"
+            f"Sizning buyurtmangiz: {total} so‘m.\n"
+            f"Iltimos, qo‘shimcha mahsulot tanlang.",
+            reply_markup=kb
+        )
+        await OrderState.choosing_product.set()
         return
 
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
