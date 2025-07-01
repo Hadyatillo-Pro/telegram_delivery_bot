@@ -69,14 +69,27 @@ class OrderState(StatesGroup):
 
 user_cart = {}
 
-@dp.message_handler(lambda msg: msg.text in products, state='*')
-async def handle_category_any_state(message: types.Message, state: FSMContext):
-    await state.set_state(OrderState.choosing_product)
+@dp.message_handler(commands=['start'])
+async def cmd_start(message: types.Message):
+   from datetime import datetime, timedelta
+now = (datetime.utcnow() + timedelta(hours=5)).hour
+    if message.from_user.id not in ADMINS and not (WORK_HOURS[0] <= now < WORK_HOURS[1]):
+        await message.answer("Kechirasiz, buyurtmalar faqat soat 8:00 dan 19:00 gacha qabul qilinadi.")
+        return
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    for cat in products:
+        kb.add(cat)
+    await message.answer("Mahsulot kategoriyasini tanlang:", reply_markup=kb)
+    user_cart[message.from_user.id] = []
+    await OrderState.choosing_product.set()
+
+@dp.message_handler(lambda msg: msg.text in products, state=OrderState.choosing_product)
+async def show_products(message: types.Message, state: FSMContext):
     category = message.text
     kb = InlineKeyboardMarkup()
     for name, price in products[category].items():
         kb.add(InlineKeyboardButton(f"{name} - {price} so'm", callback_data=name))
-    await message.answer_photo(photo=open("images/{}.jpg".format(category.lower()), 'rb'), caption="Mahsulotni tanlang:", reply_markup=kb)
+    await message.answer("Mahsulotni tanlang:", reply_markup=kb)
 
 @dp.callback_query_handler(state=OrderState.choosing_product)
 async def select_product(call: types.CallbackQuery, state: FSMContext):
@@ -94,7 +107,7 @@ async def add_to_cart(message: types.Message, state: FSMContext):
     kb.add("Yakunlash", "Yana qo'shish")
     await message.answer("Buyurtmangizga qo‘shildi. Yana mahsulot qo‘shasizmi yoki yakunlaysizmi?", reply_markup=kb)
 
-@dp.message_handler(lambda msg: msg.text == "Yana qo'shish", state='*')
+@dp.message_handler(lambda msg: msg.text == "Yana qo'shish", state=OrderState.choosing_quantity)
 async def back_to_menu(message: types.Message):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     for cat in products:
@@ -102,7 +115,7 @@ async def back_to_menu(message: types.Message):
     await message.answer("Kategoriya tanlang:", reply_markup=kb)
     await OrderState.choosing_product.set()
 
-@dp.message_handler(lambda msg: msg.text == "Yakunlash", state='*')
+@dp.message_handler(lambda msg: msg.text == "Yakunlash", state=OrderState.choosing_quantity)
 async def choose_payment(message: types.Message):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("Naqd", "Click/Payme")
