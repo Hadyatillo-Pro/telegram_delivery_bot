@@ -121,13 +121,13 @@ async def choose_payment(message: types.Message):
     await message.answer("To‘lov usulini tanlang:", reply_markup=kb)
     await OrderState.choosing_payment.set()
 
-@dp.message_handler(lambda msg: msg.text in ["Naqd", "Click/Payme"], state=OrderState.choosing_payment)
+@dp.message_handler(lambda msg: msg.text.strip().lower() in ["naqd", "click/payme"], state=OrderState.choosing_payment)
 async def get_location(message: types.Message, state: FSMContext):
-    await state.update_data(payment_method=message.text)
+    await state.update_data(payment_method=message.text.strip())
     kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add(
-        KeyboardButton("\ud83d\udccd Lokatsiyani yuborish", request_location=True),
-        KeyboardButton("\ud83d\udcde Telefon raqamni yuborish", request_contact=True)
+        KeyboardButton("📍 Lokatsiyani yuborish", request_location=True),
+        KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True)
     )
     await message.answer("Iltimos, lokatsiyangiz va telefon raqamingizni yuboring:", reply_markup=kb)
     await OrderState.sending_location.set()
