@@ -121,21 +121,20 @@ async def choose_payment(message: types.Message):
     await message.answer("To‘lov usulini tanlang:", reply_markup=kb)
     await OrderState.choosing_payment.set()
 
-@dp.message_handler(lambda msg: msg.text.strip().lower() in ["naqd", "click/payme"], state=OrderState.choosing_payment)
+@dp.message_handler(lambda msg: msg.text in ["Naqd", "Click/Payme"], state=OrderState.choosing_payment)
 async def get_location(message: types.Message, state: FSMContext):
-    await state.update_data(payment_method=message.text.strip())
+    await state.update_data(payment_method=message.text)
     kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    kb.add(
-        KeyboardButton("📍 Lokatsiyani yuborish", request_location=True),
-        KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True)
-    )
-    await message.answer("Iltimos, lokatsiyangiz va telefon raqamingizni yuboring:", reply_markup=kb)
+    kb.add(KeyboardButton("📍 Lokatsiyani yuborish", request_location=True))
+    await message.answer("Iltimos, lokatsiyangizni yuboring:", reply_markup=kb)
     await OrderState.sending_location.set()
 
 @dp.message_handler(content_types=types.ContentType.LOCATION, state=OrderState.sending_location)
 async def get_contact(message: types.Message, state: FSMContext):
     await state.update_data(location=message.location)
-    await message.answer("Endi telefon raqamingizni yuboring:")
+    kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    kb.add(KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True))
+    await message.answer("Endi telefon raqamingizni yuboring:", reply_markup=kb)
     await OrderState.sending_contact.set()
 
 @dp.message_handler(content_types=types.ContentType.CONTACT, state=OrderState.sending_contact)
@@ -145,7 +144,6 @@ async def finish_order(message: types.Message, state: FSMContext):
     payment = data['payment_method']
     location = data['location']
     phone = message.contact.phone_number
-
     total = sum(products[cat][prod] * qty for prod, qty in cart for cat in products if prod in products[cat])
 
     if total < MIN_ORDER_AMOUNT:
