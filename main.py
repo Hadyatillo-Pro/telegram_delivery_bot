@@ -132,8 +132,13 @@ async def finish_order(message: types.Message, state: FSMContext):
     payment = data['payment_method']
     location = data['location']
     phone = message.contact.phone_number
-    
- total = sum(products[cat][prod] * qty for prod, qty in cart for cat in products if prod in products[cat])
+
+    total = sum(
+        products[cat][prod] * qty
+        for prod, qty in cart
+        for cat in products
+        if prod in products[cat]
+    )
 
     if total < MIN_ORDER_AMOUNT:
         kb = ReplyKeyboardMarkup(resize_keyboard=True)
