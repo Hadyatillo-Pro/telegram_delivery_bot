@@ -153,11 +153,17 @@ async def finish_order(message: types.Message, state: FSMContext):
         if prod in products[cat]
     )
 
-    if total < MIN_ORDER_AMOUNT:
-        kb = ReplyKeyboardMarkup(resize_keyboard=True)
-        kb.add("Yana qo'shish", "Menyuga qaytish")
-        await message.answer(f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. Sizning buyurtmangiz: {total} so‘m.", reply_markup=kb)
-        return
+  if total < MIN_ORDER_AMOUNT:
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add("Yana qo'shish", "Menyuga qaytish")
+    await message.answer(
+        f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. "
+        f"Sizning buyurtmangiz: {total} so‘m.\n"
+        "Iltimos, davom etish uchun quyidagilardan birini tanlang.",
+        reply_markup=kb
+    )
+    await OrderState.choosing_quantity.set()
+    return
 
 
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
@@ -179,6 +185,22 @@ async def finish_order(message: types.Message, state: FSMContext):
 
     await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!")
     await state.finish()
+      
+@dp.message_handler(lambda msg: msg.text == "Yana qo'shish", state=OrderState.choosing_quantity)
+async def back_to_menu_repeat(message: types.Message):
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    for cat in products:
+        kb.add(cat)
+    await message.answer("Kategoriya tanlang:", reply_markup=kb)
+    await OrderState.choosing_product.set()
+
+@dp.message_handler(lambda msg: msg.text == "Menyuga qaytish", state=OrderState.choosing_quantity)
+async def back_to_menu_from_min(message: types.Message):
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    for cat in products:
+        kb.add(cat)
+    await message.answer("Mahsulot kategoriyasini tanlang:", reply_markup=kb)
+    await OrderState.choosing_product.set()
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
