@@ -153,27 +153,26 @@ async def finish_order(message: types.Message, state: FSMContext):
         if prod in products[cat]
     )
 
-  if total < MIN_ORDER_AMOUNT:
-    kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("Yana qo'shish", "Menyuga qaytish")
-    await message.answer(
-        f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. "
-        f"Sizning buyurtmangiz: {total} so‘m.\n"
-        "Iltimos, davom etish uchun quyidagilardan birini tanlang.",
-        reply_markup=kb
-    )
-    await OrderState.choosing_quantity.set()
-    return
-
+    if total < MIN_ORDER_AMOUNT:
+        kb = ReplyKeyboardMarkup(resize_keyboard=True)
+        kb.add("Yana qo'shish", "Menyuga qaytish")
+        await message.answer(
+            f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. "
+            f"Sizning buyurtmangiz: {total} so‘m.\n"
+            "Iltimos, davom etish uchun quyidagilardan birini tanlang.",
+            reply_markup=kb
+        )
+        await OrderState.choosing_quantity.set()
+        return
 
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
     full_text = (
-        f"\ud83c\udd91 Yangi buyurtma!\n\n"
-        f"\ud83d\udc64 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
-        f"\ud83d\udcde Telefon: {phone}\n"
-        f"\ud83d\udce6 Buyurtma:\n{order_text}\n"
-        f"\ud83d\udcb0 To‘lov: {payment}\n"
-        f"\ud83e\uddfe Umumiy: {total} so‘m"
+        f"🆕 Yangi buyurtma!\n\n"
+        f"👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
+        f"📞 Telefon: {phone}\n"
+        f"📦 Buyurtma:\n{order_text}\n"
+        f"💰 To‘lov: {payment}\n"
+        f"🧾 Umumiy: {total} so‘m"
     )
 
     for admin in ADMINS:
