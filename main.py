@@ -69,6 +69,7 @@ class OrderState(StatesGroup):
 
 user_cart = {}
 
+@dp.message_handler(lambda msg: msg.text == "Zakaz qilishni boshlash")
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
     from datetime import datetime, timedelta
@@ -104,7 +105,7 @@ async def add_to_cart(message: types.Message, state: FSMContext):
     qty = int(message.text)
     user_cart[message.from_user.id].append((product, qty))
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("Yakunlash", "Yana qo'shish")
+    kb.add("Yakunlash", "Yana qo'shish","❌ Buyurtmani bekor qilish")
     await message.answer("Buyurtmangizga qo‘shildi. Yana mahsulot qo‘shasizmi yoki yakunlaysizmi?", reply_markup=kb)
 
 @dp.message_handler(lambda msg: msg.text == "Yana qo'shish", state=OrderState.choosing_quantity)
@@ -118,7 +119,7 @@ async def back_to_menu(message: types.Message):
 @dp.message_handler(lambda msg: msg.text == "Yakunlash", state=OrderState.choosing_quantity)
 async def choose_payment(message: types.Message):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("Naqd", "Click/Payme")
+    kb.add("Naqd", "Click/Payme","❌ Buyurtmani bekor qilish")
     await message.answer("To‘lov usulini tanlang:", reply_markup=kb)
     await OrderState.choosing_payment.set()
 
@@ -127,6 +128,7 @@ async def get_location(message: types.Message, state: FSMContext):
     await state.update_data(payment_method=message.text)
     kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add(KeyboardButton("📍 Lokatsiyani yuborish", request_location=True))
+    kb.add("❌ Buyurtmani bekor qilish")
     await message.answer("Iltimos, lokatsiyangizni yuboring:", reply_markup=kb)
     await OrderState.sending_location.set()
 
@@ -135,6 +137,7 @@ async def get_contact(message: types.Message, state: FSMContext):
     await state.update_data(location=message.location)
     kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add(KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True))
+    kb.add("❌ Buyurtmani bekor qilish")
     await message.answer("Endi telefon raqamingizni yuboring:", reply_markup=kb)
     await OrderState.sending_contact.set()
 
@@ -200,6 +203,15 @@ async def back_to_menu_from_min(message: types.Message):
         kb.add(cat)
     await message.answer("Mahsulot kategoriyasini tanlang:", reply_markup=kb)
     await OrderState.choosing_product.set()
-
+    
+@dp.message_handler(lambda msg: msg.text == "❌ Buyurtmani bekor qilish", state='*')
+async def cancel_order(message: types.Message, state: FSMContext):
+    await state.finish()
+    user_cart.pop(message.from_user.id, None)
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add("Zakaz qilishni boshlash")  # /start o‘rniga ko‘rinadi
+    await message.answer("✅ Buyurtma bekor qilindi. Yangi buyurtma berish uchun 'Zakaz qilishni boshlash' tugmasini bosing.",
+                         reply_markup=kb)
+    
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
