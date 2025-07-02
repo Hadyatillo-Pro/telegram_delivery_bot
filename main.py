@@ -77,7 +77,7 @@ for cat in products:
     kb.add(cat)
 kb.add("❌ Buyurtmani bekor qilish") 
 from datetime import datetime, timedelta
-    now = (datetime.utcnow() + timedelta(hours=5)).hour
+ now = (datetime.utcnow() + timedelta(hours=5)).hour
     if message.from_user.id not in ADMINS and not (WORK_HOURS[0] <= now < WORK_HOURS[1]):
         await message.answer("Kechirasiz, buyurtmalar faqat soat 8:00 dan 19:00 gacha qabul qilinadi.")
         return
