@@ -72,6 +72,10 @@ user_cart = {}
 @dp.message_handler(lambda msg: msg.text == "Zakaz qilishni boshlash")
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+for cat in products:
+    kb.add(cat)
+kb.add("❌ Buyurtmani bekor qilish") 
     from datetime import datetime, timedelta
     now = (datetime.utcnow() + timedelta(hours=5)).hour
     if message.from_user.id not in ADMINS and not (WORK_HOURS[0] <= now < WORK_HOURS[1]):
@@ -95,7 +99,7 @@ async def show_products(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(state=OrderState.choosing_product)
 async def select_product(call: types.CallbackQuery, state: FSMContext):
     await state.update_data(selected_product=call.data)
-    await call.message.answer(f"Nechta '{call.data}' istaysiz?")
+    await call.message.answer(f"Nechta '{call.data}' istaysiz?,pastga sonini yozing masalan:3")
     await OrderState.next()
 
 @dp.message_handler(lambda msg: msg.text.isdigit(), state=OrderState.choosing_quantity)
