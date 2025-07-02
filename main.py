@@ -38,7 +38,7 @@ products = {
     'Ichimlik': {
         "Kompo't (1 litr)": 15000,
         "Kompo't (0.5 litr)": 8000,
-        "Coca-Cola (0.25 litr)": 5000,
+        "Coca-Cola (0.25 litr)": 4000,
         "Coca-Cola (0.5 litr)": 8000,
         "Coca-Cola (1.0 litr)": 12000,
         "Coca-Cola (1.5 litr)": 15000,
