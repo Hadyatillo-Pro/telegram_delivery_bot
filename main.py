@@ -147,7 +147,7 @@ async def get_contact(message: types.Message, state: FSMContext):
     await OrderState.sending_contact.set()
 
 @dp.message_handler(content_types=types.ContentType.CONTACT, state=OrderState.sending_contact)
-async def finish_order(message: types.Message, state: FSMContext):
+async def confirm_order(message: types.Message, state: FSMContext):
     cart = user_cart.get(message.from_user.id, [])
     data = await state.get_data()
     payment = data['payment_method']
@@ -173,26 +173,55 @@ async def finish_order(message: types.Message, state: FSMContext):
         await OrderState.choosing_quantity.set()
         return
 
+    await state.update_data(phone=phone, total=total)
+
+    order_text = "\n".join([f"{p} x {q}" for p, q in cart])
+    full_text = (
+        f"📝 Buyurtma tafsilotlari:\n\n"
+        f"📞 Telefon: {phone}\n"
+        f"📦 Buyurtma:\n{order_text}\n"
+        f"💰 To‘lov: {payment}\n"
+        f"🧾 Umumiy: {total} so‘m\n\n"
+        f"Tasdiqlaysizmi?"
+    )
+
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add("✅ Tasdiqlash", "❌ Bekor qilish")
+    await message.answer(full_text, reply_markup=kb)
+    await OrderState.confirming.set()
+
+@dp.message_handler(lambda msg: msg.text == "✅ Tasdiqlash", state=OrderState.confirming)
+async def send_to_admins(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    cart = user_cart.get(message.from_user.id, [])
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
     full_text = (
         f"🆕 Yangi buyurtma!\n\n"
         f"👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
-        f"📞 Telefon: {phone}\n"
+        f"📞 Telefon: {data['phone']}\n"
         f"📦 Buyurtma:\n{order_text}\n"
-        f"💰 To‘lov: {payment}\n"
-        f"🧾 Umumiy: {total} so‘m"
+        f"💰 To‘lov: {data['payment_method']}\n"
+        f"🧾 Umumiy: {data['total']} so‘m"
     )
 
     for admin in ADMINS:
         try:
             await bot.send_message(admin, full_text)
-            await bot.send_location(admin, location.latitude, location.longitude)
+            await bot.send_location(admin, data['location'].latitude, data['location'].longitude)
         except Exception as e:
             logging.error(f"Adminga yuborishda xatolik: {e}")
 
     await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!")
     await state.finish()
-      
+
+@dp.message_handler(lambda msg: msg.text == "❌ Bekor qilish", state=OrderState.confirming)
+async def cancel_confirmed(message: types.Message, state: FSMContext):
+    await state.finish()
+    user_cart.pop(message.from_user.id, None)
+    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add("Zakaz qilishni boshlash")
+    await message.answer("❌ Buyurtma bekor qilindi. Yangi buyurtma berish uchun 'Zakaz qilishni boshlash' tugmasini bosing.", reply_markup=kb)
+
 @dp.message_handler(lambda msg: msg.text == "Yana qo'shish", state=OrderState.choosing_quantity)
 async def back_to_menu_repeat(message: types.Message):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -208,7 +237,7 @@ async def back_to_menu_from_min(message: types.Message):
         kb.add(cat)
     await message.answer("Mahsulot kategoriyasini tanlang:", reply_markup=kb)
     await OrderState.choosing_product.set()
-    
+
 @dp.message_handler(lambda msg: msg.text == "❌ Buyurtmani bekor qilish", state='*')
 async def cancel_order(message: types.Message, state: FSMContext):
     await state.finish()
@@ -217,6 +246,7 @@ async def cancel_order(message: types.Message, state: FSMContext):
     kb.add("Zakaz qilishni boshlash")  # /start o‘rniga ko‘rinadi
     await message.answer("✅ Buyurtma bekor qilindi. Yangi buyurtma berish uchun 'Zakaz qilishni boshlash' tugmasini bosing.",
                          reply_markup=kb)
-    
+
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
+
