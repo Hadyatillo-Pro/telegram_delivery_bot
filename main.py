@@ -66,6 +66,7 @@ class OrderState(StatesGroup):
     choosing_payment = State()
     sending_location = State()
     sending_contact = State()
+    confirming = State()
 
 user_cart = {}
 
