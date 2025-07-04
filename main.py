@@ -71,20 +71,16 @@ user_cart = {}
 @dp.message_handler(lambda msg: msg.text == "Zakaz qilishni boshlash")
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
-    from datetime import datetime, timedelta
-    now = (datetime.utcnow() + timedelta(hours=5)).hour  # Toshkent vaqti
-
+    now = (datetime.utcnow() + timedelta(hours=5)).hour
     if message.from_user.id not in ADMINS and not (WORK_HOURS[0] <= now < WORK_HOURS[1]):
         await message.answer("Kechirasiz, buyurtmalar faqat soat 8:00 dan 19:00 gacha qabul qilinadi.")
         return
-
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     for cat in products:
         kb.add(cat)
-    kb.add("❌ Buyurtmani bekor qilish")  # Har doim chiqadigan bekor qilish tugmasi
-
+    kb.add("❌ Buyurtmani bekor qilish")
     await message.answer("Mahsulot kategoriyasini tanlang:", reply_markup=kb)
-    user_cart[message.from_user.id] = []  # Buyurtmani boshidan boshlash
+    user_cart[message.from_user.id] = []
     await OrderState.choosing_product.set()
 
 @dp.message_handler(lambda msg: msg.text in products, state=OrderState.choosing_product)
@@ -108,7 +104,7 @@ async def add_to_cart(message: types.Message, state: FSMContext):
     qty = int(message.text)
     user_cart[message.from_user.id].append((product, qty))
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("Yakunlash", "Yana qo'shish","❌ Buyurtmani bekor qilish")
+    kb.add("Yakunlash", "Yana qo'shish", "❌ Buyurtmani bekor qilish")
     await message.answer("Buyurtmangizga qo‘shildi. Yana mahsulot qo‘shasizmi yoki yakunlaysizmi?", reply_markup=kb)
 
 @dp.message_handler(lambda msg: msg.text == "Yana qo'shish", state=OrderState.choosing_quantity)
@@ -122,7 +118,7 @@ async def back_to_menu(message: types.Message):
 @dp.message_handler(lambda msg: msg.text == "Yakunlash", state=OrderState.choosing_quantity)
 async def choose_payment(message: types.Message):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("Naqd", "Click/Payme","❌ Buyurtmani bekor qilish")
+    kb.add("Naqd", "Click/Payme", "❌ Buyurtmani bekor qilish")
     await message.answer("To‘lov usulini tanlang:", reply_markup=kb)
     await OrderState.choosing_payment.set()
 
@@ -163,88 +159,77 @@ async def confirm_order(message: types.Message, state: FSMContext):
         kb = ReplyKeyboardMarkup(resize_keyboard=True)
         kb.add("Yana qo'shish", "Menyuga qaytish")
         await message.answer(
-            f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. "
-            f"Sizning buyurtmangiz: {total} so‘m.\n"
-            "Iltimos, davom etish uchun quyidagilardan birini tanlang.",
+            f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. Sizning buyurtmangiz: {total} so‘m.",
             reply_markup=kb
         )
         await OrderState.choosing_quantity.set()
         return
 
-    await state.update_data(phone=phone, total=total)
-
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
     full_text = (
-        f"📝 Buyurtma tafsilotlari:\n\n"
+        f"📦 Sizning buyurtmangiz:\n\n"
+        f"🧾 {order_text}\n"
+        f"💰 To‘lov usuli: {payment}\n"
         f"📞 Telefon: {phone}\n"
-        f"📦 Buyurtma:\n{order_text}\n"
-        f"💰 To‘lov: {payment}\n"
-        f"🧾 Umumiy: {total} so‘m\n\n"
-        f"Tasdiqlaysizmi?"
+        f"💵 Umumiy summa: {total} so‘m\n\n"
+        f"Iltimos, buyurtmani tasdiqlang, o‘zgartiring yoki bekor qiling."
     )
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("✅ Tasdiqlash", "❌ Bekor qilish")
+    kb.add("✅ Tasdiqlash", "✏️ O‘zgartirish", "❌ Bekor qilish")
     await message.answer(full_text, reply_markup=kb)
+    await state.update_data(phone=phone)
     await OrderState.confirming.set()
 
 @dp.message_handler(lambda msg: msg.text == "✅ Tasdiqlash", state=OrderState.confirming)
-async def send_to_admins(message: types.Message, state: FSMContext):
-    data = await state.get_data()
+async def send_order_to_admins(message: types.Message, state: FSMContext):
     cart = user_cart.get(message.from_user.id, [])
+    data = await state.get_data()
+    payment = data['payment_method']
+    location = data['location']
+    phone = data['phone']
+
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
+    total = sum(products[cat][prod] * qty for prod, qty in cart for cat in products if prod in products[cat])
+
     full_text = (
         f"🆕 Yangi buyurtma!\n\n"
         f"👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
-        f"📞 Telefon: {data['phone']}\n"
+        f"📞 Telefon: {phone}\n"
         f"📦 Buyurtma:\n{order_text}\n"
-        f"💰 To‘lov: {data['payment_method']}\n"
-        f"🧾 Umumiy: {data['total']} so‘m"
+        f"💰 To‘lov: {payment}\n"
+        f"🧾 Umumiy: {total} so‘m"
     )
 
     for admin in ADMINS:
         try:
             await bot.send_message(admin, full_text)
-            await bot.send_location(admin, data['location'].latitude, data['location'].longitude)
+            await bot.send_location(admin, location.latitude, location.longitude)
         except Exception as e:
             logging.error(f"Adminga yuborishda xatolik: {e}")
 
-    await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!")
-    await state.finish()
-
-@dp.message_handler(lambda msg: msg.text == "❌ Bekor qilish", state=OrderState.confirming)
-async def cancel_confirmed(message: types.Message, state: FSMContext):
-    await state.finish()
-    user_cart.pop(message.from_user.id, None)
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("Zakaz qilishni boshlash")
-    await message.answer("❌ Buyurtma bekor qilindi. Yangi buyurtma berish uchun 'Zakaz qilishni boshlash' tugmasini bosing.", reply_markup=kb)
+    await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!", reply_markup=kb)
+    await state.finish()
 
-@dp.message_handler(lambda msg: msg.text == "Yana qo'shish", state=OrderState.choosing_quantity)
-async def back_to_menu_repeat(message: types.Message):
+@dp.message_handler(lambda msg: msg.text == "✏️ O‘zgartirish", state=OrderState.confirming)
+async def edit_order(message: types.Message, state: FSMContext):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     for cat in products:
         kb.add(cat)
-    await message.answer("Kategoriya tanlang:", reply_markup=kb)
+    kb.add("❌ Buyurtmani bekor qilish")
+    await message.answer("Buyurtmani qayta tanlang:", reply_markup=kb)
+    user_cart[message.from_user.id] = []
     await OrderState.choosing_product.set()
 
-@dp.message_handler(lambda msg: msg.text == "Menyuga qaytish", state=OrderState.choosing_quantity)
-async def back_to_menu_from_min(message: types.Message):
-    kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    for cat in products:
-        kb.add(cat)
-    await message.answer("Mahsulot kategoriyasini tanlang:", reply_markup=kb)
-    await OrderState.choosing_product.set()
-
-@dp.message_handler(lambda msg: msg.text == "❌ Buyurtmani bekor qilish", state='*')
+@dp.message_handler(lambda msg: msg.text in ["❌ Bekor qilish", "❌ Buyurtmani bekor qilish"], state='*')
 async def cancel_order(message: types.Message, state: FSMContext):
     await state.finish()
     user_cart.pop(message.from_user.id, None)
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("Zakaz qilishni boshlash")  # /start o‘rniga ko‘rinadi
-    await message.answer("✅ Buyurtma bekor qilindi. Yangi buyurtma berish uchun 'Zakaz qilishni boshlash' tugmasini bosing.",
-                         reply_markup=kb)
+    kb.add("Zakaz qilishni boshlash")
+    await message.answer("✅ Buyurtma bekor qilindi. Yangi buyurtma berish uchun 'Zakaz qilishni boshlash' tugmasini bosing.", reply_markup=kb)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
-
