@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token="7560492080:AAH2PiGUy3wlO7xn4vd1_iSLW74ZdPc3dY4")
 dp = Dispatcher(bot, storage=MemoryStorage())
 
-ADMINS = [6057841081, 6668584870, 6590535774, 24847201]
+ADMINS = [6057841081, 6668584870, 6590535774, 24847201, 5377259476]
 MIN_ORDER_AMOUNT = 50000
 BASE_DELIVERY_COST = 15000
 EXTRA_KM_COST = 2000
@@ -43,8 +43,6 @@ products = {
         "Coca-Cola (1.0 litr)": 12000,
         "Coca-Cola (1.5 litr)": 15000,
         "Fanta-Nok ta'mli (0.5 litr)": 8000,
-        "Fanta-Nok ta'mli (1.0 litr)": 12000,
-        "Fanta-Nok ta'mli (1.5 litr)": 15000,
         "Fanta-Apelsin ta'mli (0.5 litr)": 8000,
         "Fanta-Apelsin ta'mli (1.0 litr)": 12000,
         "Fanta-Apelsin ta'mli (1.5 litr)": 15000,
