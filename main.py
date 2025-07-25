@@ -13,11 +13,11 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-API_TOKEN = os.getenv("7560492080:AAH2PiGUy3wlO7xn4vd1_iSLW74ZdPc3dY4")
+API_TOKEN = os.getenv("7560492080:AAFiVVLp_pe0R7wpYPPDwlZdLgGmmPX9e7c")
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token="7560492080:AAH2PiGUy3wlO7xn4vd1_iSLW74ZdPc3dY4")
+bot = Bot(token="7560492080:AAFiVVLp_pe0R7wpYPPDwlZdLgGmmPX9e7c")
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 ADMINS = [6057841081, 6668584870, 6590535774, 24847201, 5377259476]
