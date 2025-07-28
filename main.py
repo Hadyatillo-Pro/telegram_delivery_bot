@@ -24,7 +24,7 @@ ADMINS = [6057841081, 6668584870, 6590535774, 24847201, 5377259476]
 MIN_ORDER_AMOUNT = 50000
 BASE_DELIVERY_COST = 15000
 EXTRA_KM_COST = 2000
-WORK_HOURS = (8, 19)
+WORK_HOURS = (8, 18,5)
 
 products = {
     'Somsa': {
@@ -170,7 +170,7 @@ async def confirm_order(message: types.Message, state: FSMContext):
         f"📦 Sizning buyurtmangiz:\n\n"
         f"🧾 {order_text}\n"
         f"💰 To‘lov usuli: {payment}\n"
-        f"📞 Telefon: {phone}\n"
+        f"📞 Telefon: +{phone}\n"
         f"💵 Umumiy summa: {total} so‘m\n\n"
         f"Iltimos, buyurtmani tasdiqlang, o‘zgartiring yoki bekor qiling."
     )
@@ -210,7 +210,7 @@ async def send_order_to_admins(message: types.Message, state: FSMContext):
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("Zakaz qilishni boshlash")
-    await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!", reply_markup=kb)
+    await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!,Agar Qandaydur takliflar bo'lsa marhamat:@", reply_markup=kb)
     await state.finish()
 
 @dp.message_handler(lambda msg: msg.text == "✏️ O‘zgartirish", state=OrderState.confirming)
