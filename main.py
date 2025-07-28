@@ -170,7 +170,7 @@ async def confirm_order(message: types.Message, state: FSMContext):
         f"📦 Sizning buyurtmangiz:\n\n"
         f"🧾 {order_text}\n"
         f"💰 To‘lov usuli: {payment}\n"
-        f"📞 Telefon: +{phone}\n"
+        f"📞 Telefon: {phone}\n"
         f"💵 Umumiy summa: {total} so‘m\n\n"
         f"Iltimos, buyurtmani tasdiqlang, o‘zgartiring yoki bekor qiling."
     )
@@ -195,7 +195,7 @@ async def send_order_to_admins(message: types.Message, state: FSMContext):
     full_text = (
         f"🆕 Yangi buyurtma!\n\n"
         f"👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
-        f"📞 Telefon: {phone}\n"
+        f"📞 Telefon: +{phone}\n"
         f"📦 Buyurtma:\n{order_text}\n"
         f"💰 To‘lov: {payment}\n"
         f"🧾 Umumiy: {total} so‘m"
