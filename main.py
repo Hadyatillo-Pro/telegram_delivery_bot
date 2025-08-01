@@ -124,7 +124,7 @@ async def ask_phone(msg: Message, state: FSMContext):
 async def confirm_order(msg: Message, state: FSMContext):
     await state.update_data(phone=msg.contact.phone_number)
     data = await state.get_data()
-  summary = (
+ summary = (
     f"\u2709\ufe0f Buyurtma:\n"
     f"Kategoriya: {kategoriya}\n"
     f"Mahsulot: {mahsulot}\n"
