@@ -231,5 +231,20 @@ async def cancel_order(message: types.Message, state: FSMContext):
     kb.add("Zakaz qilishni boshlash")
     await message.answer("✅ Buyurtma bekor qilindi. Yangi buyurtma berish uchun 'Zakaz qilishni boshlash' tugmasini bosing.", reply_markup=kb)
 
+@dp.message_handler(lambda message: message.text, state='*')
+async def block_ads_handler(message: types.Message, state: FSMContext):
+    text = message.text.lower()
+    blocklist = ["http://", "https://", "t.me/", "airdrop", "claim", "bonus", "refer", "get free", "join now", "free crypto"]
+
+    if any(bad in text for bad in blocklist):
+        await message.delete()
+        try:
+            await message.answer("❌ Reklama, havola yoki spam yuborish taqiqlangan.")
+        except:
+            pass
+        return  # Shunda boshqa handlerlar ishlamaydi
+
+    await dp.process_updates([types.Update(message=message)])
+
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
