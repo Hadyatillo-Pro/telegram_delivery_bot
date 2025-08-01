@@ -83,7 +83,7 @@ async def start_order(msg: Message, state: FSMContext):
     await state.set_state(OrderStates.choosing_category)
 
 # 2. product_selection.py
-@router.message(OrderStates.choosing_category)
+@router.message(OrderState.choosing_category)
 async def select_product(msg: Message, state: FSMContext):
     category = msg.text
     await state.update_data(category=category)
