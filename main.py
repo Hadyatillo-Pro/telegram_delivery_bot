@@ -66,12 +66,13 @@ products = {
 }
 
 class OrderState(StatesGroup):
+    choosing_category = State()
     choosing_product = State()
-    choosing_quantity = State()
+    entering_quantity = State()
     choosing_payment = State()
-    sending_location = State()
-    sending_contact = State()
-    confirming = State()
+    waiting_location = State()
+    waiting_phone = State()
+    confirming_order = State()
 
 user_cart = {}
 
