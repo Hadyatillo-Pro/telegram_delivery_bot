@@ -5,6 +5,7 @@ import logging
 import os
 from math import ceil
 from datetime import datetime, timedelta
+from aiogram.types import Message
 
 from aiogram import Bot, Dispatcher, Router, types, F
 from aiogram.enums import ParseMode
@@ -13,13 +14,17 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from dotenv import load_dotenv
+from aiogram.client.default import DefaultBotProperties
 
 # Load .env
 load_dotenv()
 API_TOKEN = os.getenv("7560492080:AAGwRdJpU2P4dZgv4SwTQSMR_zXoLLFGqD8")
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token="7560492080:AAGwRdJpU2P4dZgv4SwTQSMR_zXoLLFGqD8", parse_mode=ParseMode.HTML)
+bot = Bot(
+    token="7560492080:AAGwRdJpU2P4dZgv4SwTQSMR_zXoLLFGqD8",
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
