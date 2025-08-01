@@ -124,15 +124,15 @@ async def ask_phone(msg: Message, state: FSMContext):
 async def confirm_order(msg: Message, state: FSMContext):
     await state.update_data(phone=msg.contact.phone_number)
     data = await state.get_data()
- summary = (
-    f"\u2709\ufe0f Buyurtma:\n"
-    f"Kategoriya: {kategoriya}\n"
-    f"Mahsulot: {mahsulot}\n"
-    f"Soni: {soni}\n"
-    f"To‘lov: {tolov}\n"
-    f"Manzil: {manzil}\n"
-    f"Telefon: {telefon}"
-)
+    summary = (
+        f"\u2709\ufe0f Buyurtma:\n"
+        f"Kategoriya: {kategoriya}\n"
+        f"Mahsulot: {mahsulot}\n"
+        f"Soni: {soni}\n"
+        f"To‘lov: {tolov}\n"
+        f"Manzil: {manzil}\n"
+        f"Telefon: {telefon}"
+    )
     markup = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Tasdiqlash")], [KeyboardButton(text="Bekor qilish")]], resize_keyboard=True)
     await msg.answer(summary, reply_markup=markup)
     await state.set_state(OrderStates.confirming_order)
