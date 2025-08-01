@@ -2,8 +2,7 @@ services:
   - type: web
     name: somsa-bot
     env: python
-    pythonVersion: 3.11.9
-    buildCommand: pip install -r requirements.txt
+    pythonVersion: 3.12.0
     startCommand: python main.py
     envVars:
       - key: API_TOKEN
