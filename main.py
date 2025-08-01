@@ -15,6 +15,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from dotenv import load_dotenv
 from aiogram.client.default import DefaultBotProperties
+from middlewares.working_hours import WorkingHoursMiddleware
+dp.message.middleware(WorkingHoursMiddleware())
 
 # Load .env
 load_dotenv()
