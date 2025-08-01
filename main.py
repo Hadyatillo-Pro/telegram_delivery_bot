@@ -15,8 +15,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from dotenv import load_dotenv
 from aiogram.client.default import DefaultBotProperties
-from middlewares.working_hours import WorkingHoursMiddleware
-dp.message.middleware(WorkingHoursMiddleware())
+from datetime import datetime, time
 
 # Load .env
 load_dotenv()
@@ -33,6 +32,13 @@ dp.include_router(router)
 
 ADMINS = [6057841081, 6668584870, 6590535774, 24847201, 5377259476]
 MIN_ORDER_AMOUNT = 50000
+
+def is_working_time() -> bool:
+    now = datetime.now().time()
+    return time(8, 0) <= now <= time(19, 0)
+
+def is_admin(user_id: int) -> bool:
+    return user_id in ADMINS
 
 products = {
     'Somsa': {
@@ -76,6 +82,15 @@ class OrderState(StatesGroup):
     confirming_order = State()
 
 user_cart = {}
+
+@router.message(CommandStart())
+async def start_handler(msg: Message, state: FSMContext):
+    if not is_working_time() and not is_admin(msg.from_user.id):
+        await msg.answer(
+            "⏰ Kechirasiz Ish vaqti soat 8:00 dan 19:00 gacha davom etadi.\n"
+            "Agar vaqt 20:30 bo‘lmagan bo‘lsa, @Hadyatillo25 ga murojaat qilishingiz mumkin."
+        )
+        return
 
 # 1. order_start.py
 @router.message(F.text.lower() == "start")
