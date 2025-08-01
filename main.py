@@ -31,7 +31,6 @@ dp.include_router(router)
 
 ADMINS = [6057841081, 6668584870, 6590535774, 24847201, 5377259476]
 MIN_ORDER_AMOUNT = 50000
-WORK_HOURS = (8, 19)
 
 products = {
     'Somsa': {
