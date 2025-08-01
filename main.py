@@ -83,7 +83,7 @@ async def start_order(msg: Message, state: FSMContext):
     await state.set_state(OrderStates.choosing_category)
 
 # 2. product_selection.py
-@router.message(OrderStates.choosing_category)
+@router.message(OrderState.choosing_category)
 async def select_product(msg: Message, state: FSMContext):
     category = msg.text
     await state.update_data(category=category)
@@ -91,7 +91,7 @@ async def select_product(msg: Message, state: FSMContext):
     await state.set_state(OrderStates.choosing_product)
 
 # 3. product_quantity.py
-@router.message(OrderStates.choosing_product)
+@router.message(OrderState.choosing_product)
 async def enter_quantity(msg: Message, state: FSMContext):
     product = msg.text
     await state.update_data(product=product)
@@ -99,7 +99,7 @@ async def enter_quantity(msg: Message, state: FSMContext):
     await state.set_state(OrderStates.choosing_quantity)
 
 # 4. payment_method.py
-@router.message(OrderStates.choosing_quantity)
+@router.message(OrderState.choosing_quantity)
 async def choose_payment(msg: Message, state: FSMContext):
     quantity = msg.text
     await state.update_data(quantity=quantity)
@@ -108,7 +108,7 @@ async def choose_payment(msg: Message, state: FSMContext):
     await state.set_state(OrderStates.choosing_payment)
 
 # 5. location_handler.py
-@router.message(OrderStates.choosing_payment)
+@router.message(OrderState.choosing_payment)
 async def ask_location(msg: Message, state: FSMContext):
     payment = msg.text
     await state.update_data(payment=payment)
@@ -117,7 +117,7 @@ async def ask_location(msg: Message, state: FSMContext):
     await state.set_state(OrderStates.sending_location)
 
 # 6. phone_handler.py
-@router.message(F.location, OrderStates.sending_location)
+@router.message(F.location, OrderState.sending_location)
 async def ask_phone(msg: Message, state: FSMContext):
     await state.update_data(location=msg.location)
     markup = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Telefon raqamni yuborish", request_contact=True)]], resize_keyboard=True)
@@ -125,7 +125,7 @@ async def ask_phone(msg: Message, state: FSMContext):
     await state.set_state(OrderStates.sending_phone)
 
 # 7. confirmation_handler.py
-@router.message(F.contact, OrderStates.sending_phone)
+@router.message(F.contact, OrderState.sending_phone)
 async def confirm_order(msg: Message, state: FSMContext):
     await state.update_data(phone=msg.contact.phone_number)
     data = await state.get_data()
@@ -140,15 +140,15 @@ async def confirm_order(msg: Message, state: FSMContext):
     )
     markup = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="Tasdiqlash")], [KeyboardButton(text="Bekor qilish")]], resize_keyboard=True)
     await msg.answer(summary, reply_markup=markup)
-    await state.set_state(OrderStates.confirming_order)
+    await state.set_state(OrderState.confirming_order)
 
 # 8. cancel_handler.py
-@router.message(F.text == "Bekor qilish", OrderStates.confirming_order)
+@router.message(F.text == "Bekor qilish", OrderState.confirming_order)
 async def cancel(msg: Message, state: FSMContext):
     await msg.answer("Buyurtma bekor qilindi.", reply_markup=ReplyKeyboardRemove())
     await state.clear()
 
-@router.message(F.text == "Tasdiqlash", OrderStates.confirming_order)
+@router.message(F.text == "Tasdiqlash", OrderState.confirming_order)
 async def done(msg: Message, state: FSMContext):
     await msg.answer("✅ Buyurtma qabul qilindi!", reply_markup=ReplyKeyboardRemove())
     await state.clear()
