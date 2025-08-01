@@ -70,8 +70,8 @@ class OrderState(StatesGroup):
     choosing_product = State()
     entering_quantity = State()
     choosing_payment = State()
-    waiting_location = State()
-    waiting_phone = State()
+    sending_location = State()
+    sending_phone = State()
     confirming_order = State()
 
 user_cart = {}
@@ -100,7 +100,7 @@ async def enter_quantity(msg: Message, state: FSMContext):
     await state.set_state(OrderStates.choosing_quantity)
 
 # 4. payment_method.py
-@router.message(OrderState.choosing_quantity)
+@router.message(OrderState.entering_quantity)
 async def choose_payment(msg: Message, state: FSMContext):
     quantity = msg.text
     await state.update_data(quantity=quantity)
