@@ -241,7 +241,7 @@ admin_text = (
     f"💵 Umumiy: {total} so‘m"
 )
 
-    for admin_id in ADMIN_IDS:
+for admin_id in ADMIN_IDS:
     await bot.send_message(admin_id, admin_text)
 
     await message.answer("✅ Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!", reply_markup=ReplyKeyboardRemove())
@@ -265,7 +265,7 @@ for admin in ADMINS:
     try:
         await bot.send_message(admin, full_text)
         await bot.send_location(admin, location.latitude, location.longitude)
-    except Exception as e:
+except Exception as e:
         logging.error(f"Adminga yuborishda xatolik: {e}")
 
 kb = ReplyKeyboardMarkup(resize_keyboard=True)
