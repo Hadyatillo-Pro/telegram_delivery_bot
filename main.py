@@ -209,7 +209,7 @@ async def send_order_to_admins(message: types.Message, state: FSMContext):
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("Zakaz qilishni boshlash")
-    await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!,Agar Qandaydur takliflar bo'lsa marhamat:@", reply_markup=kb)
+    await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!,Agar Qandaydur takliflar bo'lsa marhamat:@Hadyatillo25 ga murojaat qilishingiz mumkin!", reply_markup=kb)
     await state.finish()
 
 @dp.message_handler(lambda msg: msg.text == "✏️ O‘zgartirish", state=OrderState.confirming)
