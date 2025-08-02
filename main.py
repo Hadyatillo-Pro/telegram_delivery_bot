@@ -202,7 +202,7 @@ for admin_id in ADMIN_IDS:
     user_cart[message.from_user.id] = []
     await state.finish()
     
-else:
+else
 elif message.text == "✏️ O‘zgartirish":
     await message.answer("Buyurtmani boshidan boshlash uchun /start ni bosing.", reply_markup=ReplyKeyboardRemove())
     user_cart[message.from_user.id] = []
