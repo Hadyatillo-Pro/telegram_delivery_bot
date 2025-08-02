@@ -7,6 +7,7 @@ from math import ceil
 from datetime import datetime, timedelta
 from aiogram.types import Message
 
+from aiogram.filters import CommandStart
 from aiogram import Bot, Dispatcher, Router, types, F
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
