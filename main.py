@@ -231,47 +231,47 @@ async def handle_confirmation(message: types.Message, state: FSMContext):
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
     total = sum(products[cat][prod] * qty for prod, qty in cart for cat in products if prod in products[cat])
 
-        admin_text = (
-            f"📥 Yangi buyurtma:\n\n"
-            f"🛍 {order_text}\n"
-            f"💰 To‘lov: {data.get('payment_method')}\n"
-            f"📞 Telefon: {data.get('phone')}\n"
-            f"📍 Lokatsiya: {data.get('location')}\n"
-            f"📅 Yetkazish: {data.get('delivery_day')} soat {data.get('delivery_hour')}\n"
-            f"💵 Umumiy: {total} so‘m"
-        )
+admin_text = (
+    f"📥 Yangi buyurtma:\n\n"
+    f"🛍 {order_text}\n"
+    f"💰 To‘lov: {data.get('payment_method')}\n"
+    f"📞 Telefon: {data.get('phone')}\n"
+    f"📍 Lokatsiya: {data.get('location')}\n"
+    f"📅 Yetkazish: {data.get('delivery_day')} soat {data.get('delivery_hour')}\n"
+    f"💵 Umumiy: {total} so‘m"
+)
 
-        for admin_id in ADMIN_IDS:
-            await bot.send_message(admin_id, admin_text)
+    for admin_id in ADMIN_IDS:
+    await bot.send_message(admin_id, admin_text)
 
-        await message.answer("✅ Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!", reply_markup=ReplyKeyboardRemove())
-        user_cart[message.from_user.id] = []
-        await state.finish()
-
-    elif message.text == "✏️ O‘zgartirish":
-        await message.answer("Buyurtmani boshidan boshlash uchun /start ni bosing.", reply_markup=ReplyKeyboardRemove())
-        user_cart[message.from_user.id] = []
-        await state.finish()
-
-    elif message.text == "❌ Bekor qilish":
-        await message.answer("Buyurtma bekor qilindi. /start orqali yangidan boshlang.", reply_markup=ReplyKeyboardRemove())
-        user_cart[message.from_user.id] = []
-        await state.finish()
-
-    else:
-        await message.answer("Iltimos, quyidagilardan birini tanlang: ✅ Tasdiqlash, ✏️ O‘zgartirish, ❌ Bekor qilish.")
-
-    for admin in ADMINS:
-        try:
-            await bot.send_message(admin, full_text)
-            await bot.send_location(admin, location.latitude, location.longitude)
-        except Exception as e:
-            logging.error(f"Adminga yuborishda xatolik: {e}")
-
-    kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("Zakaz qilishni boshlash")
-    await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!,Agar Qandaydur takliflar bo'lsa marhamat:@Hadyatillo25 ga murojaat qilishingiz mumkin!", reply_markup=kb)
+    await message.answer("✅ Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!", reply_markup=ReplyKeyboardRemove())
+    user_cart[message.from_user.id] = []
     await state.finish()
+
+elif message.text == "✏️ O‘zgartirish":
+    await message.answer("Buyurtmani boshidan boshlash uchun /start ni bosing.", reply_markup=ReplyKeyboardRemove())
+    user_cart[message.from_user.id] = []
+    await state.finish()
+
+elif message.text == "❌ Bekor qilish":
+     await message.answer("Buyurtma bekor qilindi. /start orqali yangidan boshlang.", reply_markup=ReplyKeyboardRemove())
+     user_cart[message.from_user.id] = []
+     await state.finish()
+
+else:
+    await message.answer("Iltimos, quyidagilardan birini tanlang: ✅ Tasdiqlash, ✏️ O‘zgartirish, ❌ Bekor qilish.")
+
+for admin in ADMINS:
+    try:
+        await bot.send_message(admin, full_text)
+        await bot.send_location(admin, location.latitude, location.longitude)
+    except Exception as e:
+        logging.error(f"Adminga yuborishda xatolik: {e}")
+
+kb = ReplyKeyboardMarkup(resize_keyboard=True)
+kb.add("Zakaz qilishni boshlash")
+await message.answer("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!,Agar Qandaydur takliflar bo'lsa marhamat:@Hadyatillo25 ga murojaat qilishingiz mumkin!", reply_markup=kb)
+await state.finish()
 
 @dp.message_handler(lambda msg: msg.text == "✏️ O‘zgartirish", state=OrderState.confirming)
 async def edit_order(message: types.Message, state: FSMContext):
