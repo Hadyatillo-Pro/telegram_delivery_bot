@@ -197,15 +197,6 @@ async def hour_selected(message: Message, state: FSMContext):
         if prod in products[cat]
     )
 
-        kb = ReplyKeyboardMarkup(resize_keyboard=True)
-        kb.add("Yana qo'shish", "Menyuga qaytish")
-        await message.answer(
-            f"Minimal buyurtma miqdori {MIN_ORDER_AMOUNT} so‘m. Sizning buyurtmangiz: {total} so‘m.",
-            reply_markup=kb
-        )
-        await OrderState.choosing_quantity.set()
-        return
-
     full_text = (
         f"📦 Sizning buyurtmangiz:\n\n"
         f"🧾 {order_text}\n"
