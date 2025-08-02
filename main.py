@@ -9,6 +9,8 @@ from aiogram.dispatcher import FSMContext
 from math import ceil
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from aiogram import types
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
 # Load environment variables
 load_dotenv()
@@ -64,6 +66,10 @@ class OrderState(StatesGroup):
     sending_location = State()
     sending_contact = State()
     confirming = State()
+
+class DeliveryTimeState(StatesGroup):
+    waiting_for_day = State()
+    waiting_for_hour = State()
 
 user_cart = {}
 
@@ -138,7 +144,48 @@ async def get_contact(message: types.Message, state: FSMContext):
     kb.add("❌ Buyurtmani bekor qilish")
     await message.answer("Endi telefon raqamingizni yuboring:", reply_markup=kb)
     await OrderState.sending_contact.set()
+    
+@dp.message_handler(content_types=types.ContentType.CONTACT, state="*")
+async def after_phone_handler(message: types.Message, state: FSMContext):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    markup.add("Bugunga", "Ertaga", "2 kundan keyinga")
+    
+    await message.answer("📅 Buyurtmangizni qachonga yetkazib berishimizni hohlaysiz?", reply_markup=markup)
+    await DeliveryTimeState.waiting_for_day.set()
 
+@dp.message_handler(state=DeliveryTimeState.waiting_for_day)
+async def delivery_day_handler(message: types.Message, state: FSMContext):
+    if message.text not in ["Bugunga", "Ertaga", "2 kundan keyinga"]:
+        return await message.answer("Iltimos, tugmalardan birini tanlang.")
+
+    await state.update_data(delivery_day=message.text)
+
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=4)
+    times = [f"{h}:{m:02d}" for h in range(8, 20) for m in (0, 30)]
+    times.append("19:30")
+    
+    for i in range(0, len(times), 4):
+        markup.row(*times[i:i+4])
+
+    await message.answer("🕒 Qaysi soatga yetkazaylik?", reply_markup=markup)
+    await DeliveryTimeState.waiting_for_hour.set()
+
+@dp.message_handler(state=DeliveryTimeState.waiting_for_hour)
+async def delivery_hour_handler(message: types.Message, state: FSMContext):
+    valid_times = [f"{h}:{m:02d}" for h in range(8, 20) for m in (0, 30)] + ["19:30"]
+
+    if message.text not in valid_times:
+        return await message.answer("Iltimos, tugmalardan birini tanlang.")
+
+    await state.update_data(delivery_hour=message.text)
+    data = await state.get_data()
+    
+    await message.answer(
+        f"✅ Buyurtmangiz {data['delivery_day']} kuni, soat {data['delivery_hour']} ga belgilandi.",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    await state.finish()
+    
 @dp.message_handler(content_types=types.ContentType.CONTACT, state=OrderState.sending_contact)
 async def confirm_order(message: types.Message, state: FSMContext):
     cart = user_cart.get(message.from_user.id, [])
