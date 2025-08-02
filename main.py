@@ -172,50 +172,60 @@ async def handle_day_choice(message: types.Message, state: FSMContext):
 
 
 
-@dp.message_handler(lambda m: re.match(r"^\d{1,2}:\d{2}$", m.text), state=OrderState.waiting_for_hour)
-async def hour_selected(message: Message, state: FSMContext):
-    hour = message.text
-    data = await state.get_data()
+@dp.message_handler(state=OrderState.confirming)
+async def handle_confirmation(message: types.Message, state: FSMContext):
+    if message.text == "✅ Tasdiqlash":
+        data = await state.get_data()
+        cart = user_cart.get(message.from_user.id, [])
+        order_text = "\n".join([f"{p} x {q}" for p, q in cart])
+        total = sum(
+            products[cat][prod] * qty
+            for prod, qty in cart
+            for cat in products
+            if prod in products[cat]
+        )
 
-    # Himoya
-    if 'phone' not in data:
-        await message.answer("Xatolik: telefon raqami topilmadi. Iltimos, buyurtmani qaytadan boshlang.")
+        admin_text = (
+            f"📥 Yangi buyurtma:\n\n"
+            f"🛍 {order_text}\n"
+            f"💰 To‘lov: {data.get('payment_method')}\n"
+            f"📞 Telefon: {data.get('phone')}\n"
+            f"📍 Lokatsiya: {data.get('location')}\n"
+            f"📅 Yetkazish: {data.get('delivery_day')} soat {data.get('delivery_hour')}\n"
+            f"💵 Umumiy: {total} so‘m"
+        )
+
+        for admin_id in ADMIN_IDS:
+            await bot.send_message(admin_id, admin_text)
+
+        await message.answer(
+            "✅ Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        user_cart[message.from_user.id] = []
         await state.finish()
-        return
 
-    phone = data['phone']
-    payment = data.get('payment_method')
-    location = data.get('location')
-    delivery_day = data.get('delivery_day')
-    cart = user_cart.get(message.from_user.id, [])
+    elif message.text == "✏️ O‘zgartirish":
+        await message.answer(
+            "Buyurtmani boshidan boshlash uchun /start ni bosing.",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        user_cart[message.from_user.id] = []
+        await state.finish()
 
-    order_text = "\n".join([f"{p} x {q}" for p, q in cart])
-    total = sum(
-        products[cat][prod] * qty
-        for prod, qty in cart
-        for cat in products
-        if prod in products[cat]
-    )
+    elif message.text == "❌ Bekor qilish":
+        await message.answer(
+            "Buyurtma bekor qilindi. /start orqali yangidan boshlang.",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        user_cart[message.from_user.id] = []
+        await state.finish()
 
-    full_text = (
-        f"📦 Sizning buyurtmangiz:\n\n"
-        f"🧾 {order_text}\n"
-        f"💰 To‘lov usuli: {payment}\n"
-        f"📞 Telefon: {phone}\n"
-        f"📅 Yetkazish kuni: {delivery_day}, {hour}\n"
-        f"📍 Manzil: {location}\n"
-        f"💵 Umumiy summa: {total} so‘m\n\n"
-        f"Iltimos, buyurtmani tasdiqlang, o‘zgartiring yoki bekor qiling."
-    )
+    else:
+        await message.answer(
+            "Iltimos, quyidagilardan birini tanlang: ✅ Tasdiqlash, ✏️ O‘zgartirish, ❌ Bekor qilish."
+        )
 
-    kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("✅ Tasdiqlash", "✏️ O‘zgartirish", "❌ Bekor qilish")
-
-    await message.answer(full_text, reply_markup=kb)
-
-    await state.update_data(delivery_hour=hour)
-    await OrderState.confirming.set()
-    
 @dp.message_handler(state=OrderState.confirming)
 async def handle_confirmation(message: types.Message, state: FSMContext):
     if message.text == "✅ Tasdiqlash":
