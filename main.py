@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from aiogram import types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
-from loader import dp, bot
 
 # Load environment variables
 load_dotenv()
