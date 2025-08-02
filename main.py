@@ -173,17 +173,23 @@ async def handle_day_choice(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(lambda m: re.match(r"^\d{1,2}:\d{2}$", m.text), state=OrderState.waiting_for_hour)
-async def hour_selected(message: types.Message, state: FSMContext):
-    await state.update_data(delivery_hour=message.text)
-
+async def hour_selected(message: Message, state: FSMContext):
+    hour = message.text
     data = await state.get_data()
-    cart = user_cart.get(message.from_user.id, [])
-    payment = data['payment_method']
-    location = data['location']
-    phone = data['phone']
-    delivery_day = data['delivery_day']
-    delivery_hour = data['delivery_hour']
 
+    # Himoya
+    if 'phone' not in data:
+        await message.answer("Xatolik: telefon raqami topilmadi. Iltimos, buyurtmani qaytadan boshlang.")
+        await state.finish()
+        return
+
+    phone = data['phone']
+    payment = data.get('payment_method')
+    location = data.get('location')
+    delivery_day = data.get('delivery_day')
+    cart = user_cart.get(message.from_user.id, [])
+
+    order_text = "\n".join([f"{p} x {q}" for p, q in cart])
     total = sum(
         products[cat][prod] * qty
         for prod, qty in cart
@@ -191,7 +197,7 @@ async def hour_selected(message: types.Message, state: FSMContext):
         if prod in products[cat]
     )
 
-    if total < MIN_ORDER_AMOUNT:
+        if total < MIN_ORDER_AMOUNT:
         kb = ReplyKeyboardMarkup(resize_keyboard=True)
         kb.add("Yana qo'shish", "Menyuga qaytish")
         await message.answer(
@@ -200,24 +206,26 @@ async def hour_selected(message: types.Message, state: FSMContext):
         )
         await OrderState.choosing_quantity.set()
         return
-    
-    order_text = "\n".join([f"{p} x {q}" for p, q in cart])
+
     full_text = (
-        f"📦 Buyurtma tafsilotlari:\n\n"
+        f"📦 Sizning buyurtmangiz:\n\n"
         f"🧾 {order_text}\n"
         f"💰 To‘lov usuli: {payment}\n"
         f"📞 Telefon: {phone}\n"
-        f"📅 Yetkazib berish: {delivery_day}, soat {delivery_hour}\n"
+        f"📅 Yetkazish kuni: {delivery_day}, {hour}\n"
+        f"📍 Manzil: {location}\n"
         f"💵 Umumiy summa: {total} so‘m\n\n"
         f"Iltimos, buyurtmani tasdiqlang, o‘zgartiring yoki bekor qiling."
     )
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("✅ Tasdiqlash", "✏️ O‘zgartirish", "❌ Bekor qilish")
+
     await message.answer(full_text, reply_markup=kb)
 
+    await state.update_data(delivery_hour=hour)
     await OrderState.confirming.set()
-
+    
 @dp.message_handler(lambda msg: msg.text == "✅ Tasdiqlash", state=OrderState.confirming)
 async def send_order_to_admins(message: types.Message, state: FSMContext):
     cart = user_cart.get(message.from_user.id, [])
