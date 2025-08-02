@@ -197,7 +197,6 @@ async def hour_selected(message: Message, state: FSMContext):
         if prod in products[cat]
     )
 
-        if total < MIN_ORDER_AMOUNT:
         kb = ReplyKeyboardMarkup(resize_keyboard=True)
         kb.add("Yana qo'shish", "Menyuga qaytish")
         await message.answer(
