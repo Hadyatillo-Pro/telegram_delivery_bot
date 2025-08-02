@@ -219,6 +219,10 @@ for admin in ADMINS:
     try:
         await bot.send_message(admin, full_text)
         await bot.send_location(admin, location.latitude, location.longitude)
+try:
+    # bu yerda xatolik bo'lishi mumkin bo'lgan kod
+    phone = data['phone']
+    
 except Exception as e:
         logging.error(f"Adminga yuborishda xatolik: {e}")
 
