@@ -226,25 +226,50 @@ async def hour_selected(message: Message, state: FSMContext):
     await state.update_data(delivery_hour=hour)
     await OrderState.confirming.set()
     
-@dp.message_handler(lambda msg: msg.text == "✅ Tasdiqlash", state=OrderState.confirming)
-async def send_order_to_admins(message: types.Message, state: FSMContext):
-    cart = user_cart.get(message.from_user.id, [])
-    data = await state.get_data()
-    payment = data['payment_method']
-    location = data['location']
-    phone = data['phone']
-
+@dp.message_handler(state=OrderState.confirming)
+async def handle_confirmation(message: types.Message, state: FSMContext):
+    if message.text == "✅ Tasdiqlash":
+        data = await state.get_data()
+        cart = user_cart.get(message.from_user.id, [])
+        order_text = "\n".join([f"{p} x {q}" for p, q in cart])
+        total = sum(
+            products[cat][prod] * qty
+            for prod, qty in cart
+            for cat in products
+            if prod in products[cat]
+        )
     order_text = "\n".join([f"{p} x {q}" for p, q in cart])
     total = sum(products[cat][prod] * qty for prod, qty in cart for cat in products if prod in products[cat])
 
-    full_text = (
-        f"🆕 Yangi buyurtma!\n\n"
-        f"👤 Foydalanuvchi: @{message.from_user.username or message.from_user.full_name}\n"
-        f"📞 Telefon: {phone}\n"
-        f"📦 Buyurtma:\n{order_text}\n"
-        f"💰 To‘lov: {payment}\n"
-        f"🧾 Umumiy: {total} so‘m"
-    )
+        admin_text = (
+            f"📥 Yangi buyurtma:\n\n"
+            f"🛍 {order_text}\n"
+            f"💰 To‘lov: {data.get('payment_method')}\n"
+            f"📞 Telefon: {data.get('phone')}\n"
+            f"📍 Lokatsiya: {data.get('location')}\n"
+            f"📅 Yetkazish: {data.get('delivery_day')} soat {data.get('delivery_hour')}\n"
+            f"💵 Umumiy: {total} so‘m"
+        )
+
+        for admin_id in ADMIN_IDS:
+            await bot.send_message(admin_id, admin_text)
+
+        await message.answer("✅ Buyurtmangiz qabul qilindi! Tez orada siz bilan bog‘lanamiz. Rahmat!", reply_markup=ReplyKeyboardRemove())
+        user_cart[message.from_user.id] = []
+        await state.finish()
+
+    elif message.text == "✏️ O‘zgartirish":
+        await message.answer("Buyurtmani boshidan boshlash uchun /start ni bosing.", reply_markup=ReplyKeyboardRemove())
+        user_cart[message.from_user.id] = []
+        await state.finish()
+
+    elif message.text == "❌ Bekor qilish":
+        await message.answer("Buyurtma bekor qilindi. /start orqali yangidan boshlang.", reply_markup=ReplyKeyboardRemove())
+        user_cart[message.from_user.id] = []
+        await state.finish()
+
+    else:
+        await message.answer("Iltimos, quyidagilardan birini tanlang: ✅ Tasdiqlash, ✏️ O‘zgartirish, ❌ Bekor qilish.")
 
     for admin in ADMINS:
         try:
