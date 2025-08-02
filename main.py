@@ -20,11 +20,11 @@ from datetime import datetime, time
 
 # Load .env
 load_dotenv()
-API_TOKEN = os.getenv("7560492080:AAGwRdJpU2P4dZgv4SwTQSMR_zXoLLFGqD8")
+API_TOKEN = os.getenv("7560492080:AAFLhQ-zj0L7h-0rn5K54qWF-0wMU0rTM4c")
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(
-    token="7560492080:AAGwRdJpU2P4dZgv4SwTQSMR_zXoLLFGqD8",
+    token="7560492080:AAFLhQ-zj0L7h-0rn5K54qWF-0wMU0rTM4c",
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
 dp = Dispatcher(storage=MemoryStorage())
